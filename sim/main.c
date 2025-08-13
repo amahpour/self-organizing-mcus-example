@@ -1,40 +1,84 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "../shared/hal.h"
-#include "../shared/bus.h"
-#include "../shared/node.h"
+#include <pthread.h>
+#include <unistd.h>
+#include "../shared/core/hal.h"
+#include "../shared/core/bus_interface.h"
+#include "../shared/core/node.h"
+
+typedef struct {
+    Node node;
+    Bus* bus;
+    uint8_t index;
+    int running;
+    pthread_t thread;
+} ThreadedNode;
+
+static void* node_thread(void* arg) {
+    ThreadedNode* tn = (ThreadedNode*)arg;
+    
+    node_begin(&tn->node);
+    
+    while (tn->running) {
+        node_service(&tn->node);
+        usleep(10000); // 10ms service interval
+    }
+    
+    return NULL;
+}
 
 int main(int argc, char** argv) {
-    int n = 3;
+    int num_nodes = 3;
     if (argc >= 2) {
-        n = atoi(argv[1]);
-        if (n < 1) n = 1;
-        if (n > 32) n = 32;
+        num_nodes = atoi(argv[1]);
+        if (num_nodes < 1) num_nodes = 1;
+        if (num_nodes > 16) num_nodes = 16;
     }
-
+    
+    printf("Starting simulation with %d nodes...\n", num_nodes);
+    
     hal_init();
-    bus_global_init((uint8_t)n);
-
-    Bus* buses = (Bus*)calloc((size_t)n, sizeof(Bus));
-    Node* nodes = (Node*)calloc((size_t)n, sizeof(Node));
-    if (!buses || !nodes) return 1;
-
-    for (int i = 0; i < n; ++i) {
-        bus_init(&buses[i], (uint8_t)i, 0, 0);
-        node_init(&nodes[i], &buses[i], (uint8_t)i);
-        node_begin(&nodes[i]);
+    
+    if (bus_global_init((uint8_t)num_nodes) != 0) {
+        fprintf(stderr, "Failed to initialize bus system\n");
+        return 1;
     }
-
-    uint32_t end = hal_millis() + 3000;
-    while (hal_millis() < end) {
-        for (int i = 0; i < n; ++i) {
-            node_service(&nodes[i]);
+    
+    ThreadedNode* nodes = (ThreadedNode*)calloc((size_t)num_nodes, sizeof(ThreadedNode));
+    if (!nodes) {
+        fprintf(stderr, "Memory allocation failed\n");
+        return 1;
+    }
+    
+    // Create nodes and buses
+    for (int i = 0; i < num_nodes; ++i) {
+        if (bus_create(&nodes[i].bus, (uint8_t)i, 0, 0) != 0) {
+            fprintf(stderr, "Failed to create bus for node %d\n", i);
+            return 1;
         }
-        hal_delay(10);
+        
+        node_init(&nodes[i].node, nodes[i].bus, (uint8_t)i);
+        nodes[i].index = (uint8_t)i;
+        nodes[i].running = 1;
+        
+        if (pthread_create(&nodes[i].thread, NULL, node_thread, &nodes[i]) != 0) {
+            fprintf(stderr, "Failed to create thread for node %d\n", i);
+            return 1;
+        }
     }
-
+    
+    // Let simulation run
+    sleep(3);
+    
+    // Shutdown
+    for (int i = 0; i < num_nodes; ++i) {
+        nodes[i].running = 0;
+        pthread_join(nodes[i].thread, NULL);
+        bus_destroy(nodes[i].bus);
+    }
+    
     bus_global_shutdown();
-    free(buses);
     free(nodes);
+    
     return 0;
 }

@@ -1,0 +1,20 @@
+# Build artifacts
+sim/sim
+*.o
+build/
+arduino/AutoSort/build/
+arduino/AutoSort/shared/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*~
+*.tmp
