@@ -1,8 +1,9 @@
-#include "../../core/bus_interface.h"
-#include "../../core/hal.h"
+#include <pthread.h>
 #include <stdlib.h>
 #include <string.h>
-#include <pthread.h>
+
+#include "../../core/bus_interface.h"
+#include "../../core/hal.h"
 
 #define MAX_NODES 32
 #define RING_CAPACITY 64
@@ -36,7 +37,8 @@ static int ring_push(Queue* q, const Frame* f) {
 }
 
 static int ring_pop(Queue* q, Frame* out) {
-    if (q->count == 0) return -1;
+    if (q->count == 0)
+        return -1;
     *out = q->buffer[q->head];
     q->head = (q->head + 1) % RING_CAPACITY;
     q->count--;
@@ -67,24 +69,25 @@ void bus_global_shutdown(void) {
 }
 
 int bus_create(Bus** bus, uint8_t node_index, uint8_t rx_pin, uint8_t tx_pin) {
-    (void)rx_pin; (void)tx_pin; // Unused in simulation
-    
+    (void) rx_pin;
+    (void) tx_pin;  // Unused in simulation
+
     pthread_mutex_lock(&g_global_mutex);
     if (g_num_nodes >= MAX_NODES) {
         pthread_mutex_unlock(&g_global_mutex);
         return -1;
     }
-    
-    Bus* b = (Bus*)malloc(sizeof(Bus));
+
+    Bus* b = (Bus*) malloc(sizeof(Bus));
     if (!b) {
         pthread_mutex_unlock(&g_global_mutex);
         return -1;
     }
-    
+
     b->node_index = node_index;
     b->queue = &g_queues[g_num_nodes++];
     *bus = b;
-    
+
     pthread_mutex_unlock(&g_global_mutex);
     return 0;
 }
@@ -96,8 +99,9 @@ void bus_destroy(Bus* bus) {
 }
 
 int bus_send(Bus* bus, const Frame* frame) {
-    if (!bus || !frame) return -1;
-    
+    if (!bus || !frame)
+        return -1;
+
     // Broadcast to all queues
     pthread_mutex_lock(&g_global_mutex);
     for (size_t i = 0; i < g_num_nodes; ++i) {
@@ -112,34 +116,36 @@ int bus_send(Bus* bus, const Frame* frame) {
 }
 
 int bus_recv(Bus* bus, Frame* frame, uint16_t timeout_ms) {
-    if (!bus || !frame) return -1;
-    
+    if (!bus || !frame)
+        return -1;
+
     Queue* q = bus->queue;
     pthread_mutex_lock(&q->mutex);
-    
+
     if (q->count == 0) {
         if (timeout_ms == 0) {
             pthread_mutex_unlock(&q->mutex);
-            return 0; // No data, non-blocking
+            return 0;  // No data, non-blocking
         }
-        
+
         struct timespec ts;
         clock_gettime(CLOCK_REALTIME, &ts);
         ts.tv_sec += timeout_ms / 1000;
-        ts.tv_nsec += (long)(timeout_ms % 1000) * 1000000L;
+        ts.tv_nsec += (long) (timeout_ms % 1000) * 1000000L;
         if (ts.tv_nsec >= 1000000000L) {
             ts.tv_sec += 1;
             ts.tv_nsec -= 1000000000L;
         }
-        
+
         int rc = pthread_cond_timedwait(&q->cond, &q->mutex, &ts);
         if (rc != 0) {
             pthread_mutex_unlock(&q->mutex);
-            return 0; // Timeout
+            return 0;  // Timeout
         }
     }
-    
+
     int result = ring_pop(q, frame) == 0 ? 1 : 0;
     pthread_mutex_unlock(&q->mutex);
     return result;
 }
+

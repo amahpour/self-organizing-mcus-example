@@ -62,6 +62,10 @@ make test                    # Runs 1, 3, and 5 node tests
 # Compile Arduino sketch  
 make arduino                 # Uses arduino-cli
 
+# Code quality tools
+make format                  # Format all C files with clang-format
+make lint                    # Run static analysis with clang
+
 # Clean all build artifacts
 make clean
 
@@ -122,6 +126,9 @@ Node initialized and started
 
 ## Understanding the Code
 
+The codebase is extensively documented with function-level docstrings explaining
+the purpose, parameters, and behavior of each component. Key files to read:
+
 ### Core State Machine (`shared/core/node.c`)
 1. **SEEKING**: Listen for CLAIM messages, if none heard, claim coordinator
 2. **COORDINATOR**: Assign IDs to joining members, handle JOIN requests  
@@ -136,6 +143,11 @@ Node initialized and started
 ### Platform Abstraction
 - **HAL** (`hal.h`): `hal_millis()`, `hal_delay()`, `hal_random32()`, `hal_log()`
 - **Bus** (`bus_interface.h`): `bus_send()`, `bus_recv()` with timeout
+
+### Code Quality
+- **Comprehensive docstrings**: Every function has detailed documentation
+- **Consistent formatting**: Code styled with clang-format for readability
+- **Student-friendly**: Complex algorithms broken down with inline comments
 
 ---
 

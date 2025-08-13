@@ -54,6 +54,17 @@ clean:
 	rm -rf $(ARDUINO_SKETCH_DIR)/shared
 	@echo "🧹 Cleaned all build artifacts"
 
+# Format and lint targets
+format:
+	@echo "Formatting C source files..."
+	@find shared/ sim/ -name "*.c" -o -name "*.h" | xargs clang-format -i
+	@echo "✅ Code formatting complete"
+
+lint:
+	@echo "Linting C source files..."
+	@find shared/ sim/ -name "*.c" | xargs clang --analyze -Xanalyzer -analyzer-output=text
+	@echo "✅ Static analysis complete"
+
 # Help target
 help:
 	@echo "Self-Organizing MCUs Build System"
@@ -62,6 +73,8 @@ help:
 	@echo "  sim      - Build PC simulation (default)"
 	@echo "  arduino  - Compile Arduino sketch"
 	@echo "  test     - Run simulation tests"
+	@echo "  format   - Format all C source files"
+	@echo "  lint     - Run static analysis on C files"
 	@echo "  clean    - Clean all build artifacts"
 	@echo "  help     - Show this help"
 	@echo ""
@@ -69,3 +82,4 @@ help:
 	@echo "  make sim && ./sim/sim 3"
 	@echo "  make arduino"
 	@echo "  make test"
+	@echo "  make format"
