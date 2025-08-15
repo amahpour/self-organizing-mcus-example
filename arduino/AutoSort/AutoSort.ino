@@ -13,7 +13,6 @@ extern "C" {
 // Hardware configuration
 static const uint8_t RX_PIN = 10;
 static const uint8_t TX_PIN = 11;
-static const uint8_t NODE_INDEX = 0; // Change to 1 for second board
 
 Bus* bus = nullptr;
 Node node;
@@ -26,12 +25,12 @@ void setup() {
   
   hal_init();
   
-  if (bus_create(&bus, NODE_INDEX, RX_PIN, TX_PIN) != 0) {
+  if (bus_create(&bus, 0, RX_PIN, TX_PIN) != 0) {
     Serial.println("Failed to create bus!");
     while (1) { ; }
   }
   
-  node_init(&node, bus, NODE_INDEX);
+  node_init(&node, bus, 0);
   node_begin(&node);
   
   Serial.println("Node initialized and started");

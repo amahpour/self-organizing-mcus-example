@@ -124,6 +124,21 @@ Node initialized and started
 
 ---
 
+## MCP Demo (Recommended)
+
+For the **best demonstration experience**, use the [Arduino MCP Server](https://github.com/amahpour/arduino-mcp-server-simple) for seamless development and testing:
+
+📖 **[Complete MCP Demo Guide](docs/MCP_DEMO.md)** - Comprehensive documentation  
+🚀 **[Quick Reference](docs/DEMO_QUICK_REFERENCE.md)** - Fast demo steps
+
+### Why Use MCP?
+- **Power Sequencing Demo:** Upload sketches to simulate power-on timing
+- **Real-time Monitoring:** Live serial output from multiple boards
+- **Identical Sketches:** No manual NODE_INDEX changes needed
+- **Professional Tools:** Seamless compile/upload/monitor workflow
+
+---
+
 ## Understanding the Code
 
 The codebase is extensively documented with function-level docstrings explaining
