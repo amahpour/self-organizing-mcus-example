@@ -128,7 +128,7 @@ void node_begin(Node* n) {
     Frame in;
     int heard_claim = 0;
     uint32_t listen_start = hal_millis();
-    uint32_t listen_end = listen_start + 2000;  // Increased from 200ms to 500ms
+    uint32_t listen_end = listen_start + 200;
     uint32_t last_debug = 0;
 
     while (hal_millis() < listen_end) {
@@ -136,33 +136,40 @@ void node_begin(Node* n) {
         
         // Debug output every 100ms during listen phase
         if (now - last_debug >= 100) {
-            Serial.println("DEBUG: Listening for CLAIM... elapsed=" + String(now - listen_start) + "ms");
+            char debug_msg[64];
+            snprintf(debug_msg, sizeof(debug_msg), "DEBUG: Listening for CLAIM... elapsed=%ums", now - listen_start);
+            hal_log(debug_msg);
             last_debug = now;
         }
         
         if (bus_recv(n->bus, &in, 50)) {
             if (proto_is_valid(&in) && in.type == MSG_CLAIM) {
-                Serial.println("DEBUG: *** HEARD CLAIM MESSAGE! *** Breaking out of listen phase");
+                hal_log("DEBUG: *** HEARD CLAIM MESSAGE! *** Breaking out of listen phase");
                 heard_claim = 1;
                 break;
             } else {
-                Serial.println("DEBUG: Received non-CLAIM frame during listen: type=" + String(in.type));
+                char debug_msg[64];
+                snprintf(debug_msg, sizeof(debug_msg), "DEBUG: Received non-CLAIM frame during listen: type=%d", in.type);
+                hal_log(debug_msg);
             }
         }
         hal_yield();  // Allow other tasks to run while waiting
     }
     
-    Serial.println("DEBUG: Listen phase complete. Duration=" + String(hal_millis() - listen_start) + "ms, heard_claim=" + String(heard_claim));
+    char debug_msg[80];
+    snprintf(debug_msg, sizeof(debug_msg), "DEBUG: Listen phase complete. Duration=%ums, heard_claim=%d", 
+             hal_millis() - listen_start, heard_claim);
+    hal_log(debug_msg);
 
     // Phase 2: Coordinator Election
     if (!heard_claim) {
-        Serial.println("DEBUG: No CLAIM heard - proceeding to send our CLAIM");
+        hal_log("DEBUG: No CLAIM heard - proceeding to send our CLAIM");
         // No existing coordinator detected - attempt to claim the role
         uint8_t payload[4];
         u32_to_bytes(n->random_nonce, payload);
         Frame claim;
         make_frame(&claim, MSG_CLAIM, 0, payload, 4);
-        Serial.println("DEBUG: About to send CLAIM message");
+        hal_log("DEBUG: About to send CLAIM message");
         bus_send(n->bus, &claim);
 
         char msg[64];
