@@ -27,6 +27,7 @@ sequenceDiagram
 
 ## Hardware Wiring Diagram
 Two Arduino Crossover Wiring:
+```
 
     Arduino A                    Arduino B
    ┌─────────┐                  ┌─────────┐
@@ -43,3 +44,4 @@ Two Arduino Crossover Wiring:
         │                           │
      USB Cable                   USB Cable
      (to PC)                     (to PC)
+```
