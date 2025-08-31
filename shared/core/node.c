@@ -128,7 +128,7 @@ void node_begin(Node* n) {
     Frame in;
     int heard_claim = 0;
     uint32_t listen_start = hal_millis();
-    uint32_t listen_end = listen_start + 500;  // Increased from 200ms to 500ms
+    uint32_t listen_end = listen_start + 2000;  // Increased from 200ms to 500ms
     uint32_t last_debug = 0;
 
     while (hal_millis() < listen_end) {
