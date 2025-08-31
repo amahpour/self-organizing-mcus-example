@@ -1,8 +1,8 @@
 #include <SoftwareSerial.h>
 
-// Hardware configuration
-static const uint8_t RX_PIN = 10;
-static const uint8_t TX_PIN = 11;
+// Hardware configuration - Using R4-compatible pins
+static const uint8_t RX_PIN = 2;   // Changed from 10 to 2
+static const uint8_t TX_PIN = 3;   // Changed from 11 to 3
 
 SoftwareSerial softSerial(RX_PIN, TX_PIN, false); // false = normal logic
 
@@ -15,12 +15,12 @@ void setup() {
   Serial.begin(115200);
   delay(2000);
   
-  Serial.println("=== Ping Pong Test ===");
+  Serial.println("=== Ping Pong Test (NEW PINS) ===");
   Serial.println("Board: Arduino");
-  Serial.println("RX Pin: " + String(RX_PIN));
-  Serial.println("TX Pin: " + String(TX_PIN));
+  Serial.println("RX Pin: " + String(RX_PIN) + " (changed from 10)");
+  Serial.println("TX Pin: " + String(TX_PIN) + " (changed from 11)");
   Serial.println("Baud Rate: 19200");
-  Serial.println("=====================");
+  Serial.println("==================================");
   
   softSerial.begin(19200);
   
