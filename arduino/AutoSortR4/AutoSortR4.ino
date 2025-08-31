@@ -39,9 +39,15 @@ void setup() {
     while (1) { ; }
   }
   
+  Serial.println("DEBUG: [R4] About to init node with instance 0 (no delay)");
   node_init(&node, bus, 0);  // Instance 0 - starts immediately
-  node_begin(&node);
   
+  Serial.println("DEBUG: [R4] About to call node_begin() - will start election immediately");
+  unsigned long start_time = millis();
+  node_begin(&node);
+  unsigned long end_time = millis();
+  
+  Serial.println("DEBUG: [R4] node_begin() took " + String(end_time - start_time) + "ms");
   Serial.println("Node initialized and started");
 }
 

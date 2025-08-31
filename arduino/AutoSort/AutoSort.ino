@@ -36,9 +36,15 @@ void setup() {
     while (1) { ; }
   }
   
+  Serial.println("DEBUG: [UNO] About to init node with instance 1 (150ms delay)");
   node_init(&node, bus, 1);  // Instance 1 - 150ms startup delay
-  node_begin(&node);
   
+  Serial.println("DEBUG: [UNO] About to call node_begin() - will delay 150ms then listen");
+  unsigned long start_time = millis();
+  node_begin(&node);
+  unsigned long end_time = millis();
+  
+  Serial.println("DEBUG: [UNO] node_begin() took " + String(end_time - start_time) + "ms");
   Serial.println("Node initialized and started");
 }
 
