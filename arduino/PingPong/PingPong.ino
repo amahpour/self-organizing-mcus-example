@@ -38,10 +38,15 @@ void loop() {
     lastPingTime = currentTime;
   }
   
-  // Check for incoming messages
+  // Check for incoming messages with aggressive debugging
   if (softSerial.available()) {
+    int bytesAvailable = softSerial.available();
+    Serial.println("*** DATA DETECTED! Bytes available: " + String(bytesAvailable) + " ***");
+    
     String message = softSerial.readStringUntil('\n');
     message.trim();
+    
+    Serial.println("Raw message: '" + message + "' (length: " + String(message.length()) + ")");
     
     if (message == "PING") {
       Serial.println("Received: PING");
@@ -49,16 +54,19 @@ void loop() {
       softSerial.println("PONG");
       lastReceivedTime = currentTime;
     } else if (message == "PONG") {
-      Serial.println("Received: PONG");
+      Serial.println("*** SUCCESS: Received PONG! ***");
+      lastReceivedTime = currentTime;
+    } else if (message.length() > 0) {
+      Serial.println("Received unknown: '" + message + "'");
       lastReceivedTime = currentTime;
     } else {
-      Serial.println("Received: " + message);
+      Serial.println("Received empty message");
     }
   } else {
     // Debug: show when no data is available
     static unsigned long lastDebugTime = 0;
-    if (currentTime - lastDebugTime >= 5000) { // Every 5 seconds
-      Serial.println("Debug: No data available from SoftwareSerial");
+    if (currentTime - lastDebugTime >= 3000) { // Every 3 seconds
+      Serial.println("Debug: No data available from SoftwareSerial (pin " + String(RX_PIN) + ")");
       lastDebugTime = currentTime;
     }
   }
