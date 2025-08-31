@@ -4,7 +4,7 @@
 static const uint8_t RX_PIN = 10;
 static const uint8_t TX_PIN = 11;
 
-SoftwareSerial softSerial(RX_PIN, TX_PIN, true); // true = inverted logic
+SoftwareSerial softSerial(RX_PIN, TX_PIN, false); // false = normal logic
 
 unsigned long lastPingTime = 0;
 unsigned long pingInterval = 2000; // Send ping every 2 seconds
