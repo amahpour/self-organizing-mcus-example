@@ -6,10 +6,20 @@
  * SoftwareSerial, providing much more reliable communication.
  */
 
-#include "shared/core/node.h"
-#include "shared/core/bus_interface.h"
+#include <Arduino.h>
+
+extern "C" {
 #include "shared/core/hal.h"
+#include "shared/core/bus_interface.h"
+#include "shared/core/node.h"
 #include "shared/core/proto.h"
+#include "shared/core/proto.c"
+#include "shared/core/node.c"
+#include "shared/platform/arduino/hal_arduino.c"
+}
+
+// Include bus_due.c here where it can access C++ HardwareSerial
+#include "shared/platform/arduino_due/bus_due.c"
 
 // Use hardware Serial1 (pins 19 RX, 18 TX) on Arduino Due
 static const uint8_t RX_PIN = 19;  // Hardware serial - pin assignment ignored
@@ -95,8 +105,8 @@ void loop() {
           Serial.println("Becoming COORDINATOR");
           
           // Manually set coordinator state
-          node.state = STATE_COORDINATOR;
-          node.node_id = 1;
+          node.role = NODE_COORDINATOR;
+          node.assigned_id = 1;
           node.next_assign_id = 2;
           
           election_phase = 3; // Done
@@ -112,9 +122,9 @@ void loop() {
   // Print status periodically
   static unsigned long lastStatusTime = 0;
   if (currentTime - lastStatusTime >= 2000) {
-    const char* state_str = (node.state == STATE_SEEKING) ? "SEEKING" :
-                           (node.state == STATE_COORDINATOR) ? "COORDINATOR" : "MEMBER";
-    Serial.println("Status: " + String(state_str) + " (ID: " + String(node.node_id) + ")");
+    const char* state_str = (node.role == NODE_SEEKING) ? "SEEKING" :
+                           (node.role == NODE_COORDINATOR) ? "COORDINATOR" : "MEMBER";
+    Serial.println("Status: " + String(state_str) + " (ID: " + String(node.assigned_id) + ")");
     lastStatusTime = currentTime;
   }
   
