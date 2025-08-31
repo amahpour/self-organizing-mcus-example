@@ -123,27 +123,46 @@ void node_begin(Node* n) {
     n->seen_count = 0;
     n->last_join_ms = 0;
 
-    // Phase 1: Listen for existing CLAIM messages (200ms window)
+    // Phase 1: Listen for existing CLAIM messages (500ms window - increased for reliability)
     // This detects if another node is already trying to become coordinator
     Frame in;
     int heard_claim = 0;
-    uint32_t listen_end = hal_millis() + 200;
+    uint32_t listen_start = hal_millis();
+    uint32_t listen_end = listen_start + 500;  // Increased from 200ms to 500ms
+    uint32_t last_debug = 0;
 
     while (hal_millis() < listen_end) {
-        if (bus_recv(n->bus, &in, 50) && proto_is_valid(&in) && in.type == MSG_CLAIM) {
-            heard_claim = 1;
-            break;
+        uint32_t now = hal_millis();
+        
+        // Debug output every 100ms during listen phase
+        if (now - last_debug >= 100) {
+            Serial.println("DEBUG: Listening for CLAIM... elapsed=" + String(now - listen_start) + "ms");
+            last_debug = now;
+        }
+        
+        if (bus_recv(n->bus, &in, 50)) {
+            if (proto_is_valid(&in) && in.type == MSG_CLAIM) {
+                Serial.println("DEBUG: *** HEARD CLAIM MESSAGE! *** Breaking out of listen phase");
+                heard_claim = 1;
+                break;
+            } else {
+                Serial.println("DEBUG: Received non-CLAIM frame during listen: type=" + String(in.type));
+            }
         }
         hal_yield();  // Allow other tasks to run while waiting
     }
+    
+    Serial.println("DEBUG: Listen phase complete. Duration=" + String(hal_millis() - listen_start) + "ms, heard_claim=" + String(heard_claim));
 
     // Phase 2: Coordinator Election
     if (!heard_claim) {
+        Serial.println("DEBUG: No CLAIM heard - proceeding to send our CLAIM");
         // No existing coordinator detected - attempt to claim the role
         uint8_t payload[4];
         u32_to_bytes(n->random_nonce, payload);
         Frame claim;
         make_frame(&claim, MSG_CLAIM, 0, payload, 4);
+        Serial.println("DEBUG: About to send CLAIM message");
         bus_send(n->bus, &claim);
 
         char msg[64];
