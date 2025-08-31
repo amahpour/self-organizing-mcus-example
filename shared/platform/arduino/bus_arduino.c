@@ -55,7 +55,18 @@ int bus_send(Bus* bus, const Frame* frame) {
     const uint8_t* raw = (const uint8_t*) &f;
     size_t len = 5 + f.payload_len + 1;  // sof + header + payload + checksum
 
-    return bus->serial->write(raw, len) == (int) len ? 1 : 0;
+    // Debug output
+    Serial.print("DEBUG: [UNO] Sending frame: ");
+    for (size_t i = 0; i < len; i++) {
+        Serial.print("0x");
+        Serial.print(raw[i], HEX);
+        Serial.print(" ");
+    }
+    Serial.println();
+
+    int result = bus->serial->write(raw, len) == (int) len ? 1 : 0;
+    Serial.println("DEBUG: [UNO] Send result: " + String(result));
+    return result;
 }
 
 static int read_byte(SoftwareSerial* serial, uint8_t* byte, uint16_t timeout_ms) {
@@ -80,7 +91,9 @@ int bus_recv(Bus* bus, Frame* frame, uint16_t timeout_ms) {
     while ((hal_millis() - start) < timeout_ms) {
         if (bus->serial->available()) {
             uint8_t b = (uint8_t) bus->serial->read();
+            Serial.println("DEBUG: [UNO] Received byte: 0x" + String(b, HEX));
             if (b == SOF) {
+                Serial.println("DEBUG: [UNO] Found SOF, reading frame...");
                 frame->sof = b;
 
                 // Read fixed header
@@ -104,7 +117,10 @@ int bus_recv(Bus* bus, Frame* frame, uint16_t timeout_ms) {
                 if (!read_byte(bus->serial, &frame->checksum, timeout_ms))
                     return 0;
 
-                return proto_is_valid(frame) ? 1 : 0;
+                Serial.println("DEBUG: [UNO] Frame complete - type=" + String(frame->type) + " source=" + String(frame->source));
+                int valid = proto_is_valid(frame);
+                Serial.println("DEBUG: [UNO] Frame valid: " + String(valid));
+                return valid ? 1 : 0;
             }
         }
         hal_yield();
