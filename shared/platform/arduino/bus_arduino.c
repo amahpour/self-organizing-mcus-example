@@ -25,13 +25,13 @@ int bus_create(Bus** bus, uint8_t node_index, uint8_t rx_pin, uint8_t tx_pin) {
     if (!b)
         return -1;
 
-    b->serial = new SoftwareSerial(rx_pin, tx_pin, true);
+    b->serial = new SoftwareSerial(rx_pin, tx_pin, false);  // false = normal logic
     if (!b->serial) {
         free(b);
         return -1;
     }
 
-    b->serial->begin(19200);
+    b->serial->begin(9600);  // Match ping-pong baud rate
     *bus = b;
     return 0;
 }

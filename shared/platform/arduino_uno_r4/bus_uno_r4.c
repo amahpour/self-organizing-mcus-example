@@ -36,7 +36,7 @@ int bus_create(Bus** bus, uint8_t node_index, uint8_t rx_pin, uint8_t tx_pin) {
 
     // Use Serial1 (pins 0 RX, 1 TX) on Arduino UNO R4 WiFi
     b->serial = &Serial1;
-    b->serial->begin(19200);
+    b->serial->begin(9600);  // Match ping-pong baud rate
     
     *bus = b;
     return 0;

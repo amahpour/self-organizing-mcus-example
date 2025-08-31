@@ -4,7 +4,7 @@ sim/sim
 build/
 arduino/AutoSort*/build/
 arduino/AutoSort*/shared/
-arduino/AutoSort*/build
+arduino/AutoSort*/build*
 
 # IDE files
 .vscode/
