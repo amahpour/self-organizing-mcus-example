@@ -7,7 +7,7 @@ static const uint8_t TX_PIN = 11;
 SoftwareSerial softSerial(RX_PIN, TX_PIN, false); // false = normal logic
 
 unsigned long lastPingTime = 0;
-unsigned long pingInterval = 2000; // Send ping every 2 seconds
+unsigned long pingInterval = 3000; // Send ping every 3 seconds
 unsigned long lastReceivedTime = 0;
 unsigned long timeout = 5000; // 5 second timeout
 
@@ -53,6 +53,13 @@ void loop() {
       lastReceivedTime = currentTime;
     } else {
       Serial.println("Received: " + message);
+    }
+  } else {
+    // Debug: show when no data is available
+    static unsigned long lastDebugTime = 0;
+    if (currentTime - lastDebugTime >= 5000) { // Every 5 seconds
+      Serial.println("Debug: No data available from SoftwareSerial");
+      lastDebugTime = currentTime;
     }
   }
   
