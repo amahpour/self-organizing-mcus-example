@@ -1,5 +1,8 @@
 #include <Arduino.h>
 
+// Include C++ headers first (before extern "C")
+#include <SoftwareSerial.h>
+
 extern "C" {
 #include "shared/core/hal.h"
 #include "shared/core/bus_interface.h"
@@ -7,8 +10,11 @@ extern "C" {
 #include "shared/core/proto.c"
 #include "shared/core/node.c"
 #include "shared/platform/arduino/hal_arduino.c"
-#include "shared/platform/arduino/bus_arduino.c"
+// Note: bus_arduino.c included after extern "C" block due to SoftwareSerial dependency
 }
+
+// Include bus_arduino.c here where it can access C++ SoftwareSerial
+#include "shared/platform/arduino/bus_arduino.c"
 
 // Hardware configuration
 static const uint8_t RX_PIN = 10;

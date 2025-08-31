@@ -14,17 +14,43 @@ This project uses a shared codebase architecture where the Arduino sketch includ
 
 ## Setup Steps
 
-### 1. Open the Sketch
+### 1. Prepare the Shared Files (Critical!)
+The Arduino IDE needs the shared source files to be copied into the sketch directory:
+
+```bash
+# From the project root directory:
+cp -r shared arduino/AutoSort/
+```
+
+**Why this is needed:** The Arduino IDE looks for included files relative to the sketch directory, but this project keeps shared code in a separate folder for reuse between simulation and hardware.
+
+### 2. Open the Sketch
 1. Launch Arduino IDE
 2. Open `arduino/AutoSort/AutoSort.ino`
-3. The IDE should automatically detect and open the related files
+3. The IDE should now be able to find all the included files
 
-### 2. Verify File Structure
+### 3. Verify File Structure
 In the Arduino IDE, you should see these tabs:
 - `AutoSort.ino` (main sketch)
 - The IDE may show additional tabs for included `.c` files
 
-### 3. Node Configuration
+You can also verify the files exist in your file system:
+```
+arduino/AutoSort/
+├── AutoSort.ino
+└── shared/
+    ├── core/
+    │   ├── node.c, node.h
+    │   ├── proto.c, proto.h
+    │   ├── bus_interface.h
+    │   └── hal.h
+    └── platform/
+        └── arduino/
+            ├── bus_arduino.c
+            └── hal_arduino.c
+```
+
+### 4. Node Configuration
 The sketch uses the same code for both boards:
 ```cpp
 // Line 33 in AutoSort.ino - same for both boards:
@@ -33,23 +59,23 @@ node_init(&node, bus, 0);
 
 **Important:** You upload the **identical sketch** to both boards. The coordinator election happens based on **power-on timing**, not code differences.
 
-### 4. Board Configuration
+### 5. Board Configuration
 1. **Tools → Board** → Select your Arduino model (e.g., "Arduino Uno")
 2. **Tools → Port** → Select the COM port for your first Arduino
 
-### 5. Compile and Upload Board A
+### 6. Compile and Upload Board A
 1. Click **Verify** (✓) to compile - should show "Done compiling"
 2. Click **Upload** (→) to flash Board A
 3. Open **Tools → Serial Monitor** 
 4. Set baud rate to **115200**
 5. You should see: `AutoSort Arduino starting...`
 
-### 6. Upload to Board B
+### 7. Upload to Board B
 1. **Tools → Port** → Select Board B's port
 2. Click **Upload** to flash the **same identical sketch** to Board B
 3. No code changes needed - both boards run identical code!
 
-### 7. Hardware Wiring
+### 8. Hardware Wiring
 Connect the boards as shown in the wiring diagram:
 
 ```
@@ -59,7 +85,7 @@ RX (Pin 10) <----- TX (Pin 11)
 GND         -----> GND
 ```
 
-### 8. Test the Demo
+### 9. Test the Demo
 1. **Power both boards** via USB
 2. Open Serial Monitor for both boards (separate IDE windows)
 3. **Reset Board A first** - should become coordinator

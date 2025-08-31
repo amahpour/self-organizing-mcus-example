@@ -5,7 +5,7 @@
 #   make clean        - Clean all targets
 #   make test         - Run simulation tests
 
-.PHONY: all sim arduino clean test help
+.PHONY: all sim arduino arduino-uno arduino-r4-wifi arduino-all clean test help
 
 # Default target
 all: sim
@@ -27,18 +27,40 @@ sim/sim: $(SIM_SRCS)
 
 # Arduino build (uses arduino-cli)
 ARDUINO_SKETCH_DIR := arduino/AutoSort
-ARDUINO_FQBN := arduino:avr:uno
+ARDUINO_UNO_FQBN := arduino:avr:uno
+ARDUINO_UNO_R4_WIFI_FQBN := arduino:renesas_uno:unor4wifi
 
-arduino: $(ARDUINO_SKETCH_DIR)/build
-	@echo "✅ Arduino sketch compiled successfully"
+# Default Arduino target (classic Uno)
+arduino: arduino-uno
+	@echo "✅ Arduino sketch compiled for Uno (default)"
 
-$(ARDUINO_SKETCH_DIR)/build: $(CORE_SRCS) shared/platform/arduino/bus_arduino.c shared/platform/arduino/hal_arduino.c
+# Compile for all Arduino variants
+arduino-all: arduino-uno arduino-r4-wifi
+	@echo "✅ Arduino sketch compiled for all targets"
+
+# Classic Arduino Uno (AVR)
+arduino-uno: $(ARDUINO_SKETCH_DIR)/build-uno
+	@echo "✅ Arduino Uno (AVR) compiled successfully"
+
+# Arduino Uno R4 WiFi (Renesas)
+arduino-r4-wifi: $(ARDUINO_SKETCH_DIR)/build-r4-wifi
+	@echo "✅ Arduino Uno R4 WiFi (Renesas) compiled successfully"
+
+$(ARDUINO_SKETCH_DIR)/build-uno: $(CORE_SRCS) shared/platform/arduino/bus_arduino.c shared/platform/arduino/hal_arduino.c
 	@echo "Preparing Arduino sketch..."
 	@mkdir -p $(ARDUINO_SKETCH_DIR)
 	@cp -r shared $(ARDUINO_SKETCH_DIR)/
-	@echo "Compiling Arduino sketch..."
-	arduino-cli compile --fqbn $(ARDUINO_FQBN) $(ARDUINO_SKETCH_DIR)/
-	@touch $@  # Mark build complete
+	@echo "Compiling for Arduino Uno (AVR)..."
+	arduino-cli compile --fqbn $(ARDUINO_UNO_FQBN) $(ARDUINO_SKETCH_DIR)/
+	@touch $@
+
+$(ARDUINO_SKETCH_DIR)/build-r4-wifi: $(CORE_SRCS) shared/platform/arduino/bus_arduino.c shared/platform/arduino/hal_arduino.c
+	@echo "Preparing Arduino sketch..."
+	@mkdir -p $(ARDUINO_SKETCH_DIR)
+	@cp -r shared $(ARDUINO_SKETCH_DIR)/
+	@echo "Compiling for Arduino Uno R4 WiFi (Renesas)..."
+	arduino-cli compile --fqbn $(ARDUINO_UNO_R4_WIFI_FQBN) $(ARDUINO_SKETCH_DIR)/
+	@touch $@
 
 # Test targets
 test: sim
@@ -50,7 +72,7 @@ test: sim
 # Clean targets
 clean:
 	rm -f sim/sim
-	rm -rf $(ARDUINO_SKETCH_DIR)/build
+	rm -rf $(ARDUINO_SKETCH_DIR)/build*
 	rm -rf $(ARDUINO_SKETCH_DIR)/shared
 	@echo "🧹 Cleaned all build artifacts"
 
@@ -70,16 +92,20 @@ help:
 	@echo "Self-Organizing MCUs Build System"
 	@echo ""
 	@echo "Targets:"
-	@echo "  sim      - Build PC simulation (default)"
-	@echo "  arduino  - Compile Arduino sketch"
-	@echo "  test     - Run simulation tests"
-	@echo "  format   - Format all C source files"
-	@echo "  lint     - Run static analysis on C files"
-	@echo "  clean    - Clean all build artifacts"
-	@echo "  help     - Show this help"
+	@echo "  sim              - Build PC simulation (default)"
+	@echo "  arduino          - Compile Arduino sketch (Uno classic)"
+	@echo "  arduino-uno      - Compile for Arduino Uno (AVR)"
+	@echo "  arduino-r4-wifi  - Compile for Arduino Uno R4 WiFi (Renesas)"
+	@echo "  arduino-all      - Compile for all Arduino variants"
+	@echo "  test             - Run simulation tests"
+	@echo "  format           - Format all C source files"
+	@echo "  lint             - Run static analysis on C files"
+	@echo "  clean            - Clean all build artifacts"
+	@echo "  help             - Show this help"
 	@echo ""
 	@echo "Examples:"
 	@echo "  make sim && ./sim/sim 3"
-	@echo "  make arduino"
+	@echo "  make arduino-all      # Compile for all Arduino variants"
+	@echo "  make arduino-r4-wifi  # Compile specifically for R4 WiFi"
 	@echo "  make test"
 	@echo "  make format"

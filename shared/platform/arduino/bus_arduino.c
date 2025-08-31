@@ -1,5 +1,5 @@
+// Note: SoftwareSerial.h is included by the .ino file before extern "C"
 #include <Arduino.h>
-#include <SoftwareSerial.h>
 #include <stdlib.h>
 
 #include "../../core/bus_interface.h"
