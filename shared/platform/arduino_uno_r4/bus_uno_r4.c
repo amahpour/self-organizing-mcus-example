@@ -58,19 +58,32 @@ int bus_send(Bus* bus, const Frame* frame) {
     Frame f = *frame;
     proto_finalize(&f);
 
-    const uint8_t* raw = (const uint8_t*) &f;
-    size_t len = 5 + f.payload_len + 1;  // sof + header + payload + checksum
+    // Manually serialize frame to avoid struct padding issues
+    uint8_t buffer[5 + MAX_PAYLOAD_SIZE + 1]; // max possible frame size
+    buffer[0] = f.sof;
+    buffer[1] = f.type;
+    buffer[2] = f.source;
+    buffer[3] = f.payload_len;
+    
+    // Copy only the used payload bytes
+    for (uint8_t i = 0; i < f.payload_len; i++) {
+        buffer[4 + i] = f.payload[i];
+    }
+    
+    buffer[4 + f.payload_len] = f.checksum;
+    
+    size_t len = 5 + f.payload_len;  // sof + type + source + len + payload + checksum
 
     // Debug output
     Serial.print("DEBUG: [R4] Sending frame: ");
     for (size_t i = 0; i < len; i++) {
         Serial.print("0x");
-        Serial.print(raw[i], HEX);
+        Serial.print(buffer[i], HEX);
         Serial.print(" ");
     }
     Serial.println();
 
-    int result = bus->serial->write(raw, len) == (int) len ? 1 : 0;
+    int result = bus->serial->write(buffer, len) == (int) len ? 1 : 0;
     Serial.println("DEBUG: [R4] Send result: " + String(result));
     return result;
 }
