@@ -259,21 +259,13 @@ void node_service(Node* n) {
                 snprintf(nonce_msg, sizeof(nonce_msg), "DEBUG: COORDINATOR comparing nonces - incoming=%u, ours=%u", incoming_nonce, n->random_nonce);
                 hal_log(nonce_msg);
                 
-                // If incoming nonce is higher, step down and let them become coordinator
-                if (incoming_nonce > n->random_nonce) {
-                    hal_log("DEBUG: Higher CLAIM received - stepping down from coordinator");
-                    n->role = NODE_SEEKING;
-                    n->join_nonce = hal_random32();
-                    n->last_join_ms = hal_millis();
-                } else {
-                    // Defend our coordinator position by re-broadcasting our CLAIM
-                    hal_log("DEBUG: Lower CLAIM received - defending coordinator position");
-                    uint8_t payload[4];
-                    u32_to_bytes(n->random_nonce, payload);
-                    Frame claim;
-                    make_frame(&claim, MSG_CLAIM, 1, payload, 4);
-                    bus_send(n->bus, &claim);
-                }
+                // COORDINATOR ALWAYS defends its position - never steps down after election
+                hal_log("DEBUG: CLAIM received - defending coordinator position");
+                uint8_t payload[4];
+                u32_to_bytes(n->random_nonce, payload);
+                Frame claim;
+                make_frame(&claim, MSG_CLAIM, 1, payload, 4);
+                bus_send(n->bus, &claim);
             }
             // Handle JOIN requests from new members
             else if (in.type == MSG_JOIN && in.payload_len >= 4) {
