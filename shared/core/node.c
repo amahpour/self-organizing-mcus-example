@@ -242,8 +242,28 @@ void node_service(Node* n) {
     // Process any incoming messages with a short timeout to stay responsive
     if (bus_recv(n->bus, &in, 50) && proto_is_valid(&in)) {
         if (n->role == NODE_COORDINATOR) {
-            // Coordinator Logic: Handle JOIN requests from new members
-            if (in.type == MSG_JOIN && in.payload_len >= 4) {
+            // Coordinator Logic: Handle CLAIM messages from new nodes trying to become coordinator
+            if (in.type == MSG_CLAIM && in.payload_len >= 4) {
+                uint32_t incoming_nonce = bytes_to_u32(in.payload);
+                
+                // If incoming nonce is higher, step down and let them become coordinator
+                if (incoming_nonce > n->random_nonce) {
+                    hal_log("DEBUG: Higher CLAIM received - stepping down from coordinator");
+                    n->role = NODE_SEEKING;
+                    n->join_nonce = hal_random32();
+                    n->last_join_ms = hal_millis();
+                } else {
+                    // Defend our coordinator position by re-broadcasting our CLAIM
+                    hal_log("DEBUG: Lower CLAIM received - defending coordinator position");
+                    uint8_t payload[4];
+                    u32_to_bytes(n->random_nonce, payload);
+                    Frame claim;
+                    make_frame(&claim, MSG_CLAIM, 1, payload, 4);
+                    bus_send(n->bus, &claim);
+                }
+            }
+            // Handle JOIN requests from new members
+            else if (in.type == MSG_JOIN && in.payload_len >= 4) {
                 uint32_t nonce = bytes_to_u32(in.payload);
 
                 // Check if we've already assigned an ID for this nonce (deduplication)
