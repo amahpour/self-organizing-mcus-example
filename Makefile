@@ -42,25 +42,27 @@ arduino-all: arduino-uno arduino-r4-wifi
 arduino-uno: $(ARDUINO_SKETCH_DIR)/build-uno
 	@echo "✅ Arduino Uno (AVR) compiled successfully"
 
-# Arduino Uno R4 WiFi (Renesas)
+# Arduino Uno R4 WiFi (Renesas)  
 arduino-r4-wifi: $(ARDUINO_SKETCH_DIR)/build-r4-wifi
 	@echo "✅ Arduino Uno R4 WiFi (Renesas) compiled successfully"
 
+
+
 $(ARDUINO_SKETCH_DIR)/build-uno: $(CORE_SRCS) shared/platform/arduino/bus_arduino.c shared/platform/arduino/hal_arduino.c
-	@echo "Preparing Arduino sketch..."
+	@echo "Compiling universal AutoSort sketch for Arduino Uno (AVR)..."
 	@mkdir -p $(ARDUINO_SKETCH_DIR)
 	@cp -r shared $(ARDUINO_SKETCH_DIR)/
-	@echo "Compiling for Arduino Uno (AVR)..."
 	arduino-cli compile --fqbn $(ARDUINO_UNO_FQBN) $(ARDUINO_SKETCH_DIR)/
 	@touch $@
 
-$(ARDUINO_SKETCH_DIR)/build-r4-wifi: $(CORE_SRCS) shared/platform/arduino/bus_arduino.c shared/platform/arduino/hal_arduino.c
-	@echo "Preparing Arduino sketch..."
+$(ARDUINO_SKETCH_DIR)/build-r4-wifi: $(CORE_SRCS) shared/platform/arduino_uno_r4/bus_uno_r4.c shared/platform/arduino/hal_arduino.c
+	@echo "Compiling universal AutoSort sketch for Arduino Uno R4 WiFi (Renesas)..."
 	@mkdir -p $(ARDUINO_SKETCH_DIR)
 	@cp -r shared $(ARDUINO_SKETCH_DIR)/
-	@echo "Compiling for Arduino Uno R4 WiFi (Renesas)..."
 	arduino-cli compile --fqbn $(ARDUINO_UNO_R4_WIFI_FQBN) $(ARDUINO_SKETCH_DIR)/
 	@touch $@
+
+
 
 # Test targets
 test: sim
@@ -74,6 +76,7 @@ clean:
 	rm -f sim/sim
 	rm -rf $(ARDUINO_SKETCH_DIR)/build*
 	rm -rf $(ARDUINO_SKETCH_DIR)/shared
+
 	@echo "🧹 Cleaned all build artifacts"
 
 # Format and lint targets
@@ -96,6 +99,7 @@ help:
 	@echo "  arduino          - Compile Arduino sketch (Uno classic)"
 	@echo "  arduino-uno      - Compile for Arduino Uno (AVR)"
 	@echo "  arduino-r4-wifi  - Compile for Arduino Uno R4 WiFi (Renesas)"
+
 	@echo "  arduino-all      - Compile for all Arduino variants"
 	@echo "  test             - Run simulation tests"
 	@echo "  format           - Format all C source files"
@@ -105,7 +109,8 @@ help:
 	@echo ""
 	@echo "Examples:"
 	@echo "  make sim && ./sim/sim 3"
-	@echo "  make arduino-all      # Compile for all Arduino variants"
-	@echo "  make arduino-r4-wifi  # Compile specifically for R4 WiFi"
+	@echo "  make arduino-all       # Compile for all Arduino variants"
+	@echo "  make arduino-r4-wifi   # Compile specifically for R4 WiFi"
+
 	@echo "  make test"
 	@echo "  make format"

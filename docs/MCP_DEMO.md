@@ -16,9 +16,11 @@ An AI agent (Claude) directly controlled physical Arduino boards through MCP too
 **Step 4:** Board becomes coordinator: `Node[0] → COORDINATOR (ID=1)`  
 **Step 5:** AI demonstrates role switching with different power timing  
 
-## Key Point
+## Key Points
 
-Same identical code on both boards - timing determines who becomes coordinator, not hardcoded differences.
+- **Same identical code on both boards** - timing determines who becomes coordinator, not hardcoded differences
+- **Coordinator stability** - once elected, coordinators defend their position and never step down
+- **Mixed hardware support** - works with Arduino UNO and UNO R4 WiFi
 
 ## Why This Matters
 

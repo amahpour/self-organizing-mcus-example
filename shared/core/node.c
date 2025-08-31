@@ -123,27 +123,53 @@ void node_begin(Node* n) {
     n->seen_count = 0;
     n->last_join_ms = 0;
 
-    // Phase 1: Listen for existing CLAIM messages (200ms window)
+    // Phase 1: Listen for existing CLAIM messages (500ms window - increased for reliability)
     // This detects if another node is already trying to become coordinator
     Frame in;
     int heard_claim = 0;
-    uint32_t listen_end = hal_millis() + 200;
+    uint32_t listen_start = hal_millis();
+    uint32_t listen_end = listen_start + 1000;
+    uint32_t last_debug = 0;
 
     while (hal_millis() < listen_end) {
-        if (bus_recv(n->bus, &in, 50) && proto_is_valid(&in) && in.type == MSG_CLAIM) {
-            heard_claim = 1;
-            break;
+        uint32_t now = hal_millis();
+        
+        // Debug output every 100ms during listen phase
+        if (now - last_debug >= 100) {
+            char debug_msg[64];
+            snprintf(debug_msg, sizeof(debug_msg), "DEBUG: Listening for CLAIM... elapsed=%ums", now - listen_start);
+            hal_log(debug_msg);
+            last_debug = now;
+        }
+        
+        if (bus_recv(n->bus, &in, 50)) {
+            if (proto_is_valid(&in) && in.type == MSG_CLAIM) {
+                hal_log("DEBUG: *** HEARD CLAIM MESSAGE! *** Breaking out of listen phase");
+                heard_claim = 1;
+                break;
+            } else {
+                char debug_msg[64];
+                snprintf(debug_msg, sizeof(debug_msg), "DEBUG: Received non-CLAIM frame during listen: type=%d", in.type);
+                hal_log(debug_msg);
+            }
         }
         hal_yield();  // Allow other tasks to run while waiting
     }
+    
+    char debug_msg[80];
+    snprintf(debug_msg, sizeof(debug_msg), "DEBUG: Listen phase complete. Duration=%ums, heard_claim=%d", 
+             hal_millis() - listen_start, heard_claim);
+    hal_log(debug_msg);
 
     // Phase 2: Coordinator Election
     if (!heard_claim) {
+        hal_log("DEBUG: No CLAIM heard - proceeding to send our CLAIM");
         // No existing coordinator detected - attempt to claim the role
         uint8_t payload[4];
         u32_to_bytes(n->random_nonce, payload);
         Frame claim;
         make_frame(&claim, MSG_CLAIM, 0, payload, 4);
+        hal_log("DEBUG: About to send CLAIM message");
         bus_send(n->bus, &claim);
 
         char msg[64];
@@ -222,9 +248,27 @@ void node_service(Node* n) {
 
     // Process any incoming messages with a short timeout to stay responsive
     if (bus_recv(n->bus, &in, 50) && proto_is_valid(&in)) {
+        char debug_msg[64];
+        snprintf(debug_msg, sizeof(debug_msg), "DEBUG: node_service received frame type=%d from source=%d", in.type, in.source);
+        hal_log(debug_msg);
         if (n->role == NODE_COORDINATOR) {
-            // Coordinator Logic: Handle JOIN requests from new members
-            if (in.type == MSG_JOIN && in.payload_len >= 4) {
+            // Coordinator Logic: Handle CLAIM messages from new nodes trying to become coordinator
+            if (in.type == MSG_CLAIM && in.payload_len >= 4) {
+                uint32_t incoming_nonce = bytes_to_u32(in.payload);
+                char nonce_msg[80];
+                snprintf(nonce_msg, sizeof(nonce_msg), "DEBUG: COORDINATOR comparing nonces - incoming=%u, ours=%u", incoming_nonce, n->random_nonce);
+                hal_log(nonce_msg);
+                
+                // COORDINATOR ALWAYS defends its position - never steps down after election
+                hal_log("DEBUG: CLAIM received - defending coordinator position");
+                uint8_t payload[4];
+                u32_to_bytes(n->random_nonce, payload);
+                Frame claim;
+                make_frame(&claim, MSG_CLAIM, 1, payload, 4);
+                bus_send(n->bus, &claim);
+            }
+            // Handle JOIN requests from new members
+            else if (in.type == MSG_JOIN && in.payload_len >= 4) {
                 uint32_t nonce = bytes_to_u32(in.payload);
 
                 // Check if we've already assigned an ID for this nonce (deduplication)

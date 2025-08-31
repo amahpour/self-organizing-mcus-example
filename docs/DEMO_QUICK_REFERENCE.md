@@ -13,5 +13,7 @@ Node[0] CLAIM nonce=1234567890
 Node[0] → COORDINATOR (ID=1)
 ```
 
-## Key Insight
-Same code, different timing = different roles. No hardcoded differences needed.
+## Key Insights
+- **Same code, different timing = different roles** - No hardcoded differences needed
+- **Coordinator stability** - Once elected, coordinator never steps down to challengers
+- **Mixed board support** - Works with Arduino UNO (SoftwareSerial) and UNO R4 (HardwareSerial)

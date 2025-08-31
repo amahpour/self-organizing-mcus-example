@@ -1,4 +1,11 @@
-// Note: SoftwareSerial.h is included by the .ino file before extern "C"
+/**
+ * @file bus_uno_r4.c
+ * @brief Arduino UNO R4 WiFi hardware serial bus implementation
+ *
+ * Uses hardware Serial1 (pins 0 RX, 1 TX) instead of SoftwareSerial.
+ * This avoids all the SoftwareSerial issues on the Renesas RA4M1 architecture.
+ */
+
 #include <Arduino.h>
 #include <stdlib.h>
 
@@ -6,11 +13,11 @@
 #include "../../core/hal.h"
 
 struct Bus {
-    SoftwareSerial* serial;
+    HardwareSerial* serial;
 };
 
 int bus_global_init(uint8_t max_nodes) {
-    (void) max_nodes;  // Not needed for Arduino
+    (void) max_nodes;  // Not needed for hardware serial
     return 0;
 }
 
@@ -20,18 +27,17 @@ void bus_global_shutdown(void) {
 
 int bus_create(Bus** bus, uint8_t node_index, uint8_t rx_pin, uint8_t tx_pin) {
     (void) node_index;  // Not used for UART
+    (void) rx_pin;      // Hardware serial pins are fixed (0 RX, 1 TX)
+    (void) tx_pin;      // Hardware serial pins are fixed (0 RX, 1 TX)
 
     Bus* b = (Bus*) malloc(sizeof(Bus));
     if (!b)
         return -1;
 
-    b->serial = new SoftwareSerial(rx_pin, tx_pin, false);  // false = normal logic
-    if (!b->serial) {
-        free(b);
-        return -1;
-    }
-
+    // Use Serial1 (pins 0 RX, 1 TX) on Arduino UNO R4 WiFi
+    b->serial = &Serial1;
     b->serial->begin(9600);  // Match ping-pong baud rate
+    
     *bus = b;
     return 0;
 }
@@ -39,7 +45,7 @@ int bus_create(Bus** bus, uint8_t node_index, uint8_t rx_pin, uint8_t tx_pin) {
 void bus_destroy(Bus* bus) {
     if (bus) {
         if (bus->serial) {
-            delete bus->serial;
+            bus->serial->end();
         }
         free(bus);
     }
@@ -69,7 +75,7 @@ int bus_send(Bus* bus, const Frame* frame) {
     size_t len = 5 + f.payload_len;  // sof + type + source + len + payload + checksum
 
     // Debug output
-    Serial.print("DEBUG: [UNO] Sending frame: ");
+    Serial.print("DEBUG: [R4] Sending frame: ");
     for (size_t i = 0; i < len; i++) {
         Serial.print("0x");
         Serial.print(buffer[i], HEX);
@@ -78,11 +84,11 @@ int bus_send(Bus* bus, const Frame* frame) {
     Serial.println();
 
     int result = bus->serial->write(buffer, len) == (int) len ? 1 : 0;
-    Serial.println("DEBUG: [UNO] Send result: " + String(result));
+    Serial.println("DEBUG: [R4] Send result: " + String(result));
     return result;
 }
 
-static int read_byte(SoftwareSerial* serial, uint8_t* byte, uint16_t timeout_ms) {
+static int read_byte(HardwareSerial* serial, uint8_t* byte, uint16_t timeout_ms) {
     uint32_t start = hal_millis();
     while ((hal_millis() - start) < timeout_ms) {
         if (serial->available()) {
@@ -104,9 +110,9 @@ int bus_recv(Bus* bus, Frame* frame, uint16_t timeout_ms) {
     while ((hal_millis() - start) < timeout_ms) {
         if (bus->serial->available()) {
             uint8_t b = (uint8_t) bus->serial->read();
-            Serial.println("DEBUG: [UNO] Received byte: 0x" + String(b, HEX));
+            Serial.println("DEBUG: [R4] Received byte: 0x" + String(b, HEX));
             if (b == SOF) {
-                Serial.println("DEBUG: [UNO] Found SOF, reading frame...");
+                Serial.println("DEBUG: [R4] Found SOF, reading frame...");
                 frame->sof = b;
 
                 // Read fixed header
@@ -130,9 +136,9 @@ int bus_recv(Bus* bus, Frame* frame, uint16_t timeout_ms) {
                 if (!read_byte(bus->serial, &frame->checksum, timeout_ms))
                     return 0;
 
-                Serial.println("DEBUG: [UNO] Frame complete - type=" + String(frame->type) + " source=" + String(frame->source));
+                Serial.println("DEBUG: [R4] Frame complete - type=" + String(frame->type) + " source=" + String(frame->source));
                 int valid = proto_is_valid(frame);
-                Serial.println("DEBUG: [UNO] Frame valid: " + String(valid));
+                Serial.println("DEBUG: [R4] Frame valid: " + String(valid));
                 return valid ? 1 : 0;
             }
         }
@@ -141,4 +147,3 @@ int bus_recv(Bus* bus, Frame* frame, uint16_t timeout_ms) {
 
     return 0;  // Timeout
 }
-
