@@ -13,6 +13,12 @@ Node[0] CLAIM nonce=1234567890
 Node[0] → COORDINATOR (ID=1)
 ```
 
+## Hardware Setup
+**Wiring (crossover connection):**
+- **UNO ↔ UNO:** Pin 11 (TX) → Pin 10 (RX), Pin 10 (RX) → Pin 11 (TX), GND → GND
+- **UNO ↔ R4:** Pin 11 (TX) → Pin 0 (RX), Pin 10 (RX) → Pin 1 (TX), GND → GND  
+- **R4 ↔ R4:** Pin 1 (TX) → Pin 0 (RX), Pin 0 (RX) → Pin 1 (TX), GND → GND
+
 ## Key Insights
 - **Same code, different timing = different roles** - No hardcoded differences needed
 - **Coordinator stability** - Once elected, coordinator never steps down to challengers
