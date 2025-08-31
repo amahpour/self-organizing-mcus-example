@@ -100,19 +100,30 @@ ASSIGN received → MEMBER (ID=3)
 - **Communication**: A.TX → B.RX, B.TX → A.RX (crossover UART)
 - **Pins**: Uses pins 10 (RX) and 11 (TX) by default
 
-### Deployment
+### Key Concept: Identical Code + Power Sequencing
+- **Same sketch** flashed to both boards - no code differences!
+- **Timing determines roles**: First board to power on becomes coordinator
+- **Power sequencing demo**: Reset boards in different orders to see role switching
+- **No manual configuration**: The boards figure out their roles automatically
+
+### Deployment Options
+
+**Option 1: Command Line (Recommended)**
 ```bash
 # Compile sketch
 make arduino
 
-# Flash to both boards (same sketch!)
-# Board A: NODE_INDEX = 0 (in AutoSort.ino)  
-# Board B: NODE_INDEX = 1 (for startup delay)
+# Flash identical sketch to both boards
+arduino-cli upload -p /dev/ttyUSB0 --fqbn arduino:avr:uno arduino/AutoSort
+arduino-cli upload -p /dev/ttyUSB1 --fqbn arduino:avr:uno arduino/AutoSort
 
-# Monitor serial at 115200 baud
+# Monitor serial at 115200 baud and use power sequencing:
 # Power A first, then B → A becomes coordinator, B gets ID=2
-# Power B first, then A → B becomes coordinator, A gets ID=2
+# Reset both, power B first → B becomes coordinator, A gets ID=2
 ```
+
+**Option 2: Arduino IDE**  
+📖 **[Arduino IDE Setup Guide](docs/ARDUINO_IDE_SETUP.md)** - Complete manual setup instructions
 
 ### Expected Arduino Output
 ```
