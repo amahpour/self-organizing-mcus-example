@@ -24,3 +24,22 @@ sequenceDiagram
     B3->>B1: JOIN (nonce=9012)
     B1-->>B3: ASSIGN (ID #3, nonce=9012)
 ```
+
+## Hardware Wiring Diagram
+Two Arduino Crossover Wiring:
+
+    Arduino A                    Arduino B
+   ┌─────────┐                  ┌─────────┐
+   │         │                  │         │
+   │   TX(11)├─────────────────►│RX(10)   │
+   │         │                  │         │
+   │   RX(10)│◄─────────────────┤TX(11)   │
+   │         │                  │         │
+   │     GND ├──────────────────┤GND      │
+   │         │                  │         │
+   │    5V/USB                  │5V/USB   │
+   └─────────┘                  └─────────┘
+        │                           │
+        │                           │
+     USB Cable                   USB Cable
+     (to PC)                     (to PC)
