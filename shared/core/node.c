@@ -248,10 +248,16 @@ void node_service(Node* n) {
 
     // Process any incoming messages with a short timeout to stay responsive
     if (bus_recv(n->bus, &in, 50) && proto_is_valid(&in)) {
+        char debug_msg[64];
+        snprintf(debug_msg, sizeof(debug_msg), "DEBUG: node_service received frame type=%d from source=%d", in.type, in.source);
+        hal_log(debug_msg);
         if (n->role == NODE_COORDINATOR) {
             // Coordinator Logic: Handle CLAIM messages from new nodes trying to become coordinator
             if (in.type == MSG_CLAIM && in.payload_len >= 4) {
                 uint32_t incoming_nonce = bytes_to_u32(in.payload);
+                char nonce_msg[80];
+                snprintf(nonce_msg, sizeof(nonce_msg), "DEBUG: COORDINATOR comparing nonces - incoming=%u, ours=%u", incoming_nonce, n->random_nonce);
+                hal_log(nonce_msg);
                 
                 // If incoming nonce is higher, step down and let them become coordinator
                 if (incoming_nonce > n->random_nonce) {
