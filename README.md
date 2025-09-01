@@ -24,19 +24,42 @@
 This project demonstrates **maximum code reuse** between simulation and hardware with **zero ifdefs** in business logic:
 
 ```
-shared/
-├── core/                    # Platform-agnostic business logic (ZERO ifdefs!)
-│   ├── node.c              # State machine: SEEKING → COORDINATOR/MEMBER
-│   ├── proto.c             # Message framing and validation
-│   ├── bus_interface.h     # Abstract bus API
-│   └── hal.h               # Hardware abstraction layer
-└── platform/               # Platform-specific implementations
-    ├── sim/                # Linux simulation (pthreads + queues)
-    │   ├── bus_sim.c       # In-process broadcast bus
-    │   └── hal_sim.c       # Unix timing + stdio logging
-    └── arduino/            # Arduino hardware (UART + SoftwareSerial)
-        ├── bus_arduino.c   # UART framing over SoftwareSerial
-        └── hal_arduino.c   # Arduino timing + Serial logging
+.
+├── DEVELOPMENT.md           # Development notes and internal documentation
+├── Makefile                # Build system for simulation and Arduino
+├── README.md               # This file
+├── arduino/                # Arduino sketch and project files
+│   └── AutoSort/           # Main Arduino sketch
+│       └── AutoSort.ino    # Arduino implementation using shared code
+├── docs/                   # Documentation and guides
+│   ├── AGENTIC_HARDWARE_CONTROL.md # AI-driven hardware control guide
+│   ├── ARDUINO_IDE_SETUP.md        # Arduino IDE setup instructions
+│   ├── DEMO_QUICK_REFERENCE.md     # Quick demo reference
+│   ├── DIAGRAMS.md                 # System diagrams and visualizations
+│   ├── MCP_DEMO.md                 # MCP server demo guide
+│   ├── SIMULATION.md               # Simulation documentation
+│   └── images/                     # Documentation images
+│       └── startup_sequence.png    # System startup flow diagram
+├── shared/                 # Shared code between platforms
+│   ├── README.md           # Shared code documentation
+│   ├── core/               # Platform-agnostic business logic (ZERO ifdefs!)
+│   │   ├── bus_interface.h # Abstract bus API
+│   │   ├── hal.h           # Hardware abstraction layer
+│   │   ├── node.c          # State machine: SEEKING → COORDINATOR/MEMBER
+│   │   ├── node.h          # Node state and function declarations
+│   │   ├── proto.c         # Message framing and validation
+│   │   └── proto.h         # Protocol message type definitions
+│   └── platform/           # Platform-specific implementations
+│       ├── arduino/        # Arduino hardware (UART + SoftwareSerial)
+│       │   ├── bus_arduino.c # UART framing over SoftwareSerial
+│       │   └── hal_arduino.c # Arduino timing + Serial logging
+│       ├── arduino_uno_r4/ # Arduino UNO R4 specific implementation
+│       │   └── bus_uno_r4.c # UNO R4 optimized bus implementation
+│       └── sim/            # Linux simulation (pthreads + queues)
+│           ├── bus_sim.c   # In-process broadcast bus
+│           └── hal_sim.c   # Unix timing + stdio logging
+└── sim/                    # Simulation executable and test files
+    └── main.c              # Simulation entry point and test harness
 ```
 
 ### Key Benefits
