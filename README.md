@@ -82,8 +82,19 @@ This project demonstrates **maximum code reuse** between simulation and hardware
 # Build and test simulation
 make test                    # Runs 1, 3, and 5 node tests
 
+# Setup Arduino CLI and board packages
+make setup-arduino-cli       # Initialize Arduino CLI
+make setup-minicore          # Install MiniCore for ATmega328P
+
 # Compile Arduino sketch  
-make arduino                 # Uses arduino-cli
+make arduino                 # Uses arduino-cli (default: Arduino Uno)
+make arduino-atmega328p      # Compile for bare ATmega328P (MiniCore)
+make arduino-r4-wifi         # Compile for Arduino Uno R4 WiFi
+make arduino-all             # Compile for all supported platforms
+
+# Program ATmega328P
+make burn-bootloader-atmega328p  # Set fuses (8MHz, BOD 2.7V)
+make program-atmega328p          # Program with AutoSort sketch
 
 # Code quality tools
 make format                  # Format all C files with clang-format
@@ -112,6 +123,18 @@ ASSIGN → id=3
 ASSIGN received → MEMBER (ID=3)
 ✅ All tests passed
 ```
+
+---
+
+## Supported Platforms
+
+This project now supports **three Arduino-compatible platforms**:
+
+1. **Arduino Uno (Classic)** - 16MHz external crystal, 5V logic
+2. **Arduino Uno R4 WiFi** - Renesas RA4M1, hardware Serial1
+3. **Bare ATmega328P** - 8MHz internal RC, 3.3V logic, Atmel-ICE programming
+
+All platforms use the **same AutoSort sketch** with compile-time board detection.
 
 ---
 
@@ -158,6 +181,7 @@ Node initialized and started
 
 ---
 
+
 ## MCP Demo (Recommended)
 
 For the **best demonstration experience**, use the [Arduino MCP Server](https://github.com/amahpour/arduino-mcp-server-simple) for seamless development and testing:
@@ -202,8 +226,10 @@ the purpose, parameters, and behavior of each component. Key files to read:
 
 ## Extending to New Platforms
 
-Adding ESP32, STM32, or other platforms is straightforward:
+Adding ESP32, STM32, or other platforms is straightforward. This project demonstrates multiple approaches:
 
+### **Approach 1: Separate Platform Implementation**
+For completely different architectures (ESP32, STM32):
 1. **Create platform directory**:
    ```
    shared/platform/esp32/
@@ -215,7 +241,18 @@ Adding ESP32, STM32, or other platforms is straightforward:
 
 3. **Add Makefile target** for the new platform
 
-4. **No changes needed** to core business logic!
+### **Approach 2: Arduino Variant (Like ATmega328P)**
+For Arduino-compatible chips with different configurations:
+1. **Add board detection** in `AutoSort.ino`
+2. **Adjust baud rates/clocks** for the specific hardware
+3. **Reuse existing HAL and bus implementations**
+4. **Add new Makefile target** with appropriate FQBN
+
+### **Key Benefits**
+- **95% code reuse** between simulation and all hardware platforms
+- **Zero ifdefs** in shared business logic
+- **Clean separation** of platform vs core concerns
+- **Easy to extend** - just add new platform folders or Arduino variants
 
 ---
 

@@ -100,6 +100,17 @@ int bus_create(Bus** bus, uint8_t node_index, uint8_t rx_pin, uint8_t tx_pin);
 void bus_destroy(Bus* bus);
 
 /**
+ * @brief Set baud rate for bus (platform-specific)
+ *
+ * Some platforms (like Arduino) may need to adjust baud rates
+ * after bus creation for different board configurations.
+ *
+ * @param bus Bus handle to configure
+ * @param baud Baud rate to set
+ */
+void bus_set_baud(Bus* bus, uint32_t baud);
+
+/**
  * @brief Send a frame over the bus
  *
  * Transmits a protocol frame to other nodes on the bus. The frame

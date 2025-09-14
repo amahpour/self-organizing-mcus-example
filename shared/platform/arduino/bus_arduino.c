@@ -31,7 +31,9 @@ int bus_create(Bus** bus, uint8_t node_index, uint8_t rx_pin, uint8_t tx_pin) {
         return -1;
     }
 
-    b->serial->begin(9600);  // Match ping-pong baud rate
+    // Start with default baud rate - this gets immediately overridden by bus_set_baud()
+    // in AutoSort.ino with board-specific rates (4800 for ATmega328P, 9600 for Arduino Uno)
+    b->serial->begin(9600);
     *bus = b;
     return 0;
 }
@@ -42,6 +44,14 @@ void bus_destroy(Bus* bus) {
             delete bus->serial;
         }
         free(bus);
+    }
+}
+
+// Function to set baud rate after bus creation (for board-specific rates)
+void bus_set_baud(Bus* bus, uint32_t baud) {
+    if (bus && bus->serial) {
+        bus->serial->end();
+        bus->serial->begin(baud);
     }
 }
 
