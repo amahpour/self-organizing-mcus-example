@@ -47,24 +47,36 @@ class SerialMonitor:
             self.device_colors[device] = DEVICE_COLORS[i % len(DEVICE_COLORS)]
     
     def get_device_name(self, device_path):
-        """Get a friendly name for the device"""
-        device_path = Path(device_path)
-        name = device_path.name
-        
-        # Map common device names to friendly names
-        device_map = {
-            'ttyAMA2': 'ATmega328P-1',
-            'ttyAMA3': 'ATmega328P-2', 
-            'ttyAMA4': 'ATmega328P-3',
-            'ttyUSB0': 'USB-Serial-0',
-            'ttyUSB1': 'USB-Serial-1',
-        }
-        
-        return device_map.get(name, name)
+        """Get the device path as the name"""
+        return device_path
     
     def format_timestamp(self):
         """Format current timestamp"""
         return datetime.now().strftime("%H:%M:%S.%f")[:-3]  # Include milliseconds
+    
+    def colorize_message(self, message):
+        """Add color highlighting to protocol keywords and DEBUG messages"""
+        # Protocol keywords to highlight
+        keywords = {
+            'HELLO': Fore.GREEN + Style.BRIGHT,
+            'CLAIM': Fore.YELLOW + Style.BRIGHT, 
+            'JOIN': Fore.BLUE + Style.BRIGHT,
+            'ASSIGN': Fore.MAGENTA + Style.BRIGHT,
+            'COORDINATOR': Fore.RED + Style.BRIGHT,
+            'MEMBER': Fore.CYAN + Style.BRIGHT,
+        }
+        
+        # Check if this is a DEBUG message
+        if message.startswith('DEBUG:'):
+            # Make DEBUG messages dimmer
+            message = f"{Style.DIM}{message}{Style.RESET_ALL}"
+        else:
+            # Highlight protocol keywords in non-DEBUG messages
+            for keyword, color_code in keywords.items():
+                if keyword in message:
+                    message = message.replace(keyword, f"{color_code}{keyword}{Style.RESET_ALL}")
+        
+        return message
     
     def print_message(self, device, message):
         """Print a formatted message with timestamp and device info"""
@@ -76,11 +88,14 @@ class SerialMonitor:
         message = message.strip()
         if not message:
             return
+        
+        # Apply message colorization
+        colored_message = self.colorize_message(message)
             
         # Format: [HH:MM:SS.mmm] DEVICE-NAME: message
         print(f"{Style.DIM}[{timestamp}]{Style.RESET_ALL} "
-              f"{color}{Style.BRIGHT}{device_name:>12}{Style.RESET_ALL}: "
-              f"{message}")
+              f"{color}{Style.BRIGHT}{device_name:>15}{Style.RESET_ALL}: "
+              f"{colored_message}")
     
     async def monitor_device(self, device_path):
         """Monitor a single serial device"""
@@ -153,11 +168,6 @@ Examples:
   %(prog)s /dev/ttyAMA2,/dev/ttyAMA3
   %(prog)s /dev/ttyUSB0 /dev/ttyUSB1 --baud 115200
   %(prog)s /dev/ttyAMA2,/dev/ttyAMA3,/dev/ttyAMA4 --baud 38400
-
-Device Mapping:
-  ttyAMA2 → ATmega328P-1
-  ttyAMA3 → ATmega328P-2  
-  ttyAMA4 → ATmega328P-3
         """
     )
     
