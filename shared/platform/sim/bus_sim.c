@@ -100,6 +100,11 @@ void bus_destroy(Bus* bus) {
     }
 }
 
+void bus_set_baud(Bus* bus, uint32_t baud) {
+    (void) bus;   // Unused
+    (void) baud;  // Unused - simulation doesn't use baud rates
+}
+
 int bus_send(Bus* bus, const Frame* frame) {
     if (!bus || !frame)
         return -1;

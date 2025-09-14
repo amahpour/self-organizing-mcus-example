@@ -51,6 +51,13 @@ void bus_destroy(Bus* bus) {
     }
 }
 
+void bus_set_baud(Bus* bus, uint32_t baud) {
+    if (bus && bus->serial) {
+        bus->serial->end();
+        bus->serial->begin(baud);
+    }
+}
+
 int bus_send(Bus* bus, const Frame* frame) {
     if (!bus || !bus->serial || !frame)
         return -1;

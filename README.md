@@ -82,8 +82,19 @@ This project demonstrates **maximum code reuse** between simulation and hardware
 # Build and test simulation
 make test                    # Runs 1, 3, and 5 node tests
 
+# Setup Arduino CLI and board packages
+make setup-arduino-cli       # Initialize Arduino CLI
+make setup-minicore          # Install MiniCore for ATmega328P
+
 # Compile Arduino sketch  
-make arduino                 # Uses arduino-cli
+make arduino                 # Uses arduino-cli (default: Arduino Uno)
+make arduino-atmega328p      # Compile for bare ATmega328P (MiniCore)
+make arduino-r4-wifi         # Compile for Arduino Uno R4 WiFi
+make arduino-all             # Compile for all supported platforms
+
+# Program ATmega328P
+make burn-bootloader-atmega328p  # Set fuses (8MHz, BOD 2.7V)
+make program-atmega328p          # Program with AutoSort sketch
 
 # Code quality tools
 make format                  # Format all C files with clang-format
@@ -112,6 +123,18 @@ ASSIGN → id=3
 ASSIGN received → MEMBER (ID=3)
 ✅ All tests passed
 ```
+
+---
+
+## Supported Platforms
+
+This project now supports **three Arduino-compatible platforms**:
+
+1. **Arduino Uno (Classic)** - 16MHz external crystal, 5V logic
+2. **Arduino Uno R4 WiFi** - Renesas RA4M1, hardware Serial1
+3. **Bare ATmega328P** - 8MHz internal RC, 3.3V logic, Atmel-ICE programming
+
+All platforms use the **same AutoSort sketch** with compile-time board detection.
 
 ---
 
@@ -155,6 +178,67 @@ Node[0] CLAIM nonce=1234567890
 Node[0] → COORDINATOR (ID=1)
 Node initialized and started
 ```
+
+---
+
+## Bare ATmega328P Demo
+
+### Prerequisites
+- **Atmel-ICE** programmer (or compatible ISP programmer)
+- **MiniCore** board package for Arduino CLI
+- **ATmega328P** chip on breadboard with minimal wiring
+
+### Setup
+```bash
+# Setup Arduino CLI and MiniCore (one-time setup)
+make setup-minicore
+
+# Compile for ATmega328P
+make arduino-atmega328p
+```
+
+### Wiring (ATmega328P ↔ Atmel-ICE)
+| Atmel-ICE AVR pin | ATmega328P DIP pin |
+|-------------------|-------------------|
+| 1 (SCK)           | 19 (PB5 / SCK)    |
+| 2 (GND)           | 8 or 22 (GND)     |
+| 3 (MISO)          | 18 (PB4 / MISO)   |
+| 4 (VTG)           | 7 (VCC)           |
+| 6 (nRESET)        | 1 (PC6 / RESET)   |
+| 9 (MOSI)          | 17 (PB3 / MOSI)   |
+
+**Power/decoupling (minimum):**
+- VCC (pin 7) → **3.3 V**
+- AVCC (pin 20) → **3.3 V** (tie to VCC)
+- GND (pins 8/22) → **GND**
+- 0.1 µF cap near VCC–GND
+
+### Inter-board Communication (ATmega328P ↔ Arduino Uno)
+- **ATmega328P pin 18 (PB4)** → **Arduino Uno pin 10 (RX)**
+- **ATmega328P pin 19 (PB5)** → **Arduino Uno pin 11 (TX)**
+- **GND** ↔ **GND**
+- **3.3V** logic (level shifting may be needed for 5V Arduino)
+
+### Programming & Testing
+```bash
+# Set fuses for 8MHz internal RC + BOD 2.7V (one-time setup per chip)
+make burn-bootloader-atmega328p
+
+# Program the ATmega328P chip with AutoSort sketch
+make program-atmega328p
+
+# Test UART communication (38400 baud)
+# Use your preferred serial terminal (minicom, screen, etc.)
+# Device: /dev/ttyAMA2 (or your UART device)
+# Baud: 38400
+```
+
+### Key Differences from Arduino Uno
+- **Clock**: 8MHz internal RC (vs 16MHz external crystal)
+- **Voltage**: 3.3V operation (vs 5V Arduino)
+- **Debug Serial**: 38400 baud (vs 115200 Arduino)
+- **Bus Communication**: 4800 baud SoftwareSerial (vs 9600 Arduino)
+- **Programming**: Atmel-ICE ISP (vs USB bootloader)
 
 ---
 
@@ -202,8 +286,10 @@ the purpose, parameters, and behavior of each component. Key files to read:
 
 ## Extending to New Platforms
 
-Adding ESP32, STM32, or other platforms is straightforward:
+Adding ESP32, STM32, or other platforms is straightforward. This project demonstrates multiple approaches:
 
+### **Approach 1: Separate Platform Implementation**
+For completely different architectures (ESP32, STM32):
 1. **Create platform directory**:
    ```
    shared/platform/esp32/
@@ -215,7 +301,18 @@ Adding ESP32, STM32, or other platforms is straightforward:
 
 3. **Add Makefile target** for the new platform
 
-4. **No changes needed** to core business logic!
+### **Approach 2: Arduino Variant (Like ATmega328P)**
+For Arduino-compatible chips with different configurations:
+1. **Add board detection** in `AutoSort.ino`
+2. **Adjust baud rates/clocks** for the specific hardware
+3. **Reuse existing HAL and bus implementations**
+4. **Add new Makefile target** with appropriate FQBN
+
+### **Key Benefits**
+- **95% code reuse** between simulation and all hardware platforms
+- **Zero ifdefs** in shared business logic
+- **Clean separation** of platform vs core concerns
+- **Easy to extend** - just add new platform folders or Arduino variants
 
 ---
 
