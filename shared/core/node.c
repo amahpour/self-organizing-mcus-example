@@ -122,6 +122,7 @@ void node_begin(Node* n) {
     n->random_nonce = hal_random32();  // For tie-breaking in coordinator election
     n->seen_count = 0;
     n->last_join_ms = 0;
+    n->in_election = 1;  // Prevent node_service() from consuming messages during election
 
     // Phase 1: Listen for existing CLAIM messages (500ms window - increased for reliability)
     // This detects if another node is already trying to become coordinator
@@ -176,15 +177,22 @@ void node_begin(Node* n) {
         snprintf(msg, sizeof(msg), "Node[%u] CLAIM nonce=%u", n->instance_index, n->random_nonce);
         hal_log(msg);
 
-        // Phase 3: Conflict Detection Window (150ms)
+        // Phase 3: Conflict Detection Window (1000ms)
         // If another node claims with a higher nonce, we yield to them
+        // Extended timeout for ATmega328P: coordinator takes ~60-90ms to respond + bus delays
         int lost = 0;
-        uint32_t conflict_end = hal_millis() + 150;
+        uint32_t conflict_end = hal_millis() + 1000;
 
         while (hal_millis() < conflict_end) {
             if (bus_recv(n->bus, &in, 50) && proto_is_valid(&in) && in.type == MSG_CLAIM &&
                 in.payload_len >= 4) {
                 uint32_t other_nonce = bytes_to_u32(in.payload);
+                // If we hear a CLAIM from source ID 1 (the canonical coordinator ID), yield immediately.
+                // This prevents taking over when a coordinator is already established, regardless of nonce.
+                if (in.source == 1) {
+                    lost = 1;
+                    break;
+                }
                 if (other_nonce > n->random_nonce) {
                     // Another node has a higher nonce - they win
                     lost = 1;
@@ -229,6 +237,8 @@ void node_begin(Node* n) {
         snprintf(msg, sizeof(msg), "JOIN (nonce=%u)", n->join_nonce);
         hal_log(msg);
     }
+    
+    n->in_election = 0;  // Allow node_service() to process messages now
 }
 
 /**
@@ -245,6 +255,11 @@ void node_begin(Node* n) {
  */
 void node_service(Node* n) {
     Frame in;
+
+    // Don't process messages during coordinator election to prevent race conditions
+    if (n->in_election) {
+        return;
+    }
 
     // Process any incoming messages with a short timeout to stay responsive
     if (bus_recv(n->bus, &in, 50) && proto_is_valid(&in)) {

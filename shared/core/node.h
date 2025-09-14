@@ -56,6 +56,7 @@ typedef struct {
 
     // Coordinator election state
     uint32_t random_nonce; /**< Random nonce for coordinator election tie-breaking */
+    uint8_t in_election;   /**< Flag to prevent node_service() from consuming messages during election */
 
     // Coordinator-specific state
     uint8_t next_assign_id; /**< Next ID to assign to joining members (starts at 2) */

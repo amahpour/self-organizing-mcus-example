@@ -104,8 +104,6 @@ burn-bootloader-atmega328p: setup-minicore
 
 program-atmega328p: $(ARDUINO_SKETCH_DIR)/build-atmega328p
 	@echo "==> Programming ATmega328P with AutoSort sketch..."
-	@echo "Ensure ATmega328P chip is connected to $(ATMEGA328P_PROGRAMMER)"
-	@read -r -p "Press Enter when ready to program..." _
 	arduino-cli upload -b "$(ARDUINO_ATMEGA328P_FQBN)" -P "$(ATMEGA328P_PROGRAMMER)" $(ARDUINO_SKETCH_DIR)/
 	@echo "✅ ATmega328P programmed successfully"
 
