@@ -5,8 +5,8 @@ This guide shows how to manually compile and upload the AutoSort project using t
 ## Prerequisites
 
 - Arduino IDE 1.8.x or 2.x installed
-- Two Arduino boards (Uno, Nano, etc.)
-- USB cables for both boards
+- Two Arduino boards (Uno, Nano, etc.) OR bare ATmega328P chips
+- USB cables for Arduino boards OR Atmel-ICE programmer for bare chips
 
 ## Project Structure Note
 
@@ -142,6 +142,44 @@ The system uses **power-on timing** for coordinator election:
 - **Identical code**: Both boards run the exact same sketch - no hardcoded differences!
 
 The `node_init(&node, bus, 0)` parameter could be used for startup delays, but in this demo we rely on natural power-on timing differences.
+
+## ATmega328P Setup (Bare Chip)
+
+For bare ATmega328P chips, additional setup is required:
+
+### Prerequisites
+- **MiniCore** board package for 8MHz internal RC support
+- **Atmel-ICE** or compatible ISP programmer
+- **ATmega328P** chip on breadboard with minimal wiring
+
+### MiniCore Installation
+1. **File** → **Preferences** → **Additional Boards Manager URLs**
+2. Add: `https://mcudude.github.io/MiniCore/package_MCUdude_MiniCore_index.json`
+3. **Tools** → **Board** → **Boards Manager** → Search "MiniCore" → Install
+
+### Board Configuration
+- **Board**: "ATmega328" (from MiniCore)
+- **Clock**: "8 MHz internal"
+- **BOD**: "2.7V"
+- **Bootloader**: "No bootloader"
+- **Programmer**: "Atmel-ICE" (or your ISP programmer)
+
+### Wiring
+- **ISP Programming**: Connect Atmel-ICE to ATmega328P ISP pins (see DIAGRAMS.md)
+- **Power**: 3.3V to VCC/AVCC, GND to GND pins, 0.1µF decoupling cap
+- **Communication**: SoftwareSerial on pins 10/11 (same as Arduino Uno)
+- **Debug**: Hardware Serial on pins 0/1 at 38400 baud
+
+### Programming Process
+1. **Burn Bootloader**: Sets fuses for 8MHz internal RC + BOD 2.7V (one-time per chip)
+2. **Upload Sketch**: Programs the AutoSort code via ISP
+
+### Key Differences
+- **Clock**: 8MHz internal RC (vs 16MHz Arduino Uno)
+- **Voltage**: 3.3V operation (vs 5V Arduino)
+- **Debug Baud**: 38400 (vs 115200 Arduino)
+- **Bus Baud**: 4800 SoftwareSerial (vs 9600 Arduino)
+- **Programming**: ISP programmer (vs USB bootloader)
 
 ## Next Steps
 
