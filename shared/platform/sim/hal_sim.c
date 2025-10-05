@@ -109,3 +109,30 @@ uint32_t hal_random32(void) {
 void hal_log(const char* msg) {
     printf("%s\n", msg);
 }
+
+/**
+ * @brief Configure GPIO pin as output (simulation stub)
+ *
+ * In simulation, this is a no-op but we log the configuration
+ * for debugging purposes. Real hardware would configure the
+ * pin direction in the GPIO controller.
+ *
+ * @param pin Pin number to configure
+ */
+void hal_gpio_set_output(uint8_t pin) {
+    printf("[GPIO] Pin %u configured as OUTPUT\n", pin);
+}
+
+/**
+ * @brief Write digital value to GPIO pin (simulation stub)
+ *
+ * In simulation, we log the pin state change to stdout.
+ * This allows verification that the status LED logic is
+ * working correctly during testing.
+ *
+ * @param pin Pin number to write
+ * @param value 1 for HIGH, 0 for LOW
+ */
+void hal_gpio_write(uint8_t pin, uint8_t value) {
+    printf("[GPIO] Pin %u → %s\n", pin, value ? "HIGH" : "LOW");
+}

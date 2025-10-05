@@ -19,6 +19,9 @@
 
 #include "hal.h"
 
+/** Status LED pin number (Arduino pin 13, ATmega328P PB5) */
+#define STATUS_LED_PIN 13
+
 /**
  * @brief Check if coordinator has already seen a JOIN request nonce (deduplication)
  *
@@ -97,6 +100,10 @@ void node_init(Node* n, Bus* bus, uint8_t instance_index) {
     // Set up basic node parameters
     n->bus = bus;
     n->instance_index = instance_index;
+    
+    // Initialize status LED pin
+    hal_gpio_set_output(STATUS_LED_PIN);
+    hal_gpio_write(STATUS_LED_PIN, 0);  // Start with LED off
 }
 
 /**
@@ -211,6 +218,10 @@ void node_begin(Node* n) {
 
             snprintf(msg, sizeof(msg), "Node[%u] → COORDINATOR (ID=1)", n->instance_index);
             hal_log(msg);
+            
+            // Turn on status LED to indicate startup sequence complete
+            hal_gpio_write(STATUS_LED_PIN, 1);
+            hal_log("Status LED: ON (Coordinator ready)");
         }
     }
 
@@ -321,6 +332,10 @@ void node_service(Node* n) {
                     char msg[64];
                     snprintf(msg, sizeof(msg), "ASSIGN received → MEMBER (ID=%u)", n->assigned_id);
                     hal_log(msg);
+                    
+                    // Turn on status LED to indicate startup sequence complete
+                    hal_gpio_write(STATUS_LED_PIN, 1);
+                    hal_log("Status LED: ON (Member ready)");
                 }
             }
         }

@@ -111,6 +111,37 @@ uint32_t hal_random32(void);
  */
 void hal_log(const char* msg);
 
+/**
+ * @brief Configure a GPIO pin as an output
+ *
+ * This function configures the specified pin as a digital output.
+ * Call this once during initialization before using hal_gpio_write().
+ *
+ * @param pin Platform-specific pin number (e.g., Arduino pin 13)
+ *
+ * Platform Examples:
+ * - Simulation: Store pin configuration (no-op)
+ * - Arduino: pinMode(pin, OUTPUT)
+ * - ESP32: gpio_set_direction(pin, GPIO_MODE_OUTPUT)
+ */
+void hal_gpio_set_output(uint8_t pin);
+
+/**
+ * @brief Write a digital value to a GPIO pin
+ *
+ * This function sets the specified output pin to HIGH (1) or LOW (0).
+ * The pin must be configured as an output using hal_gpio_set_output() first.
+ *
+ * @param pin Platform-specific pin number
+ * @param value 1 for HIGH, 0 for LOW
+ *
+ * Platform Examples:
+ * - Simulation: printf() to show pin state change
+ * - Arduino: digitalWrite(pin, value ? HIGH : LOW)
+ * - ESP32: gpio_set_level(pin, value)
+ */
+void hal_gpio_write(uint8_t pin, uint8_t value);
+
 #ifdef __cplusplus
 }
 #endif
