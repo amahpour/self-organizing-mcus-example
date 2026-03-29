@@ -28,3 +28,11 @@ void hal_log(const char* msg) {
     Serial.println(msg);
 }
 
+void hal_gpio_set_output(uint8_t pin) {
+    pinMode(pin, OUTPUT);
+}
+
+void hal_gpio_write(uint8_t pin, uint8_t value) {
+    digitalWrite(pin, value ? HIGH : LOW);
+}
+
